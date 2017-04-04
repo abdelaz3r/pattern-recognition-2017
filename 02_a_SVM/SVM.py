@@ -38,7 +38,7 @@ def prediction(k='linear' , c=1,  g=0.001):
 def main():
 
  parser = argparse.ArgumentParser() 
- parser.add_argument('c', nargs='*', help="The C parameter for SVM",default=[5], type = int)
+ parser.add_argument('c', nargs='*', help="The C parameter for SVM",default=[5], type = float)
  parser.add_argument('cv', nargs='*',help="number of folds for K-fold CV", default=[5], type = int)
  parser.add_argument('k', type=str, help="the kernel 'rbf','linear','poly',...")
  parser.add_argument('g', help="gamma, The kernel coeff ",type=int)
