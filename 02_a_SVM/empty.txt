@@ -1,1 +1,40 @@
- 
+#imports
+import numpy as np
+from sklearn import svm,metrics,preprocessing
+from sklearn.model_selection import GridSearchCV as GS
+from sklearn.metrics import classification_report
+import argparse
+
+#load data
+train = np.loadtxt('train.csv', dtype=float, delimiter=',') 
+train_y = train[:,0:1].flatten()
+train= train[:,1:]
+
+#scale the data[0,1]. using min max scaler that preserves sparcity 
+min_max_scaler = preprocessing.MinMaxScaler()
+#fit and transform the scaler with train
+train= min_max_scaler.fit_transform(train)
+
+#find the best parameters by using a grid search CV
+# all posibble parameters takes time.
+C_range = np.logspace(-4, 1, 5)
+gamma_range = np.logspace(-5, 3, 8)
+k = ['linear', 'rbf','poly']
+degree = np.array([2,3])
+
+param_grid = dict(kernel=k, gamma=gamma_range, C=C_range)
+grid = GS(svm.SVC(), param_grid=param_grid,n_jobs=-1 ).fit(train, train_y)
+
+
+
+# find the best parameters for Linear kernel using LinearSVC
+
+clf = GS(svm.LinearSVC(),dict( C=np.logspace(-4, 0, 15)),n_jobs=-1).fit(train, train_y)
+
+#print cross validation details
+means = clf.cv_results_['mean_test_score']
+stds = clf.cv_results_['std_test_score']
+for mean, std, params in zip(means, stds, clf.cv_results_['params']):
+   print("%0.3f (+/-%0.03f) for %r"
+              % (mean, std * 2, params))
+print("Best settng is %r" %clf.best_params_) 
