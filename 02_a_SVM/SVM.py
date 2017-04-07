@@ -7,47 +7,88 @@ Created on Tue Apr 04 09:58:25 2017
 
 #imports
 import numpy as np
-from sklearn import svm,metrics,cross_validation as CV
-import argparse
+from sklearn import svm,metrics,preprocessing
+from sklearn.model_selection import GridSearchCV as GS
+from sklearn.metrics import classification_report
+from sklearn.decomposition import PCA
 
 #load data
-train = np.loadtxt('train.csv', dtype=int, delimiter=',') 
-train_y = train[:,0:1].flatten()
+train = np.loadtxt('C:/Users/alvin/Downloads/train.csv', dtype=float, delimiter=',')
+test = np.loadtxt('C:/Users/alvin/Downloads/test.csv', dtype=float, delimiter=',')
+
+
+
+train_y = train[:,0:1].flatten().astype(int)
 train= train[:,1:]
 
 
-def tune(k='linear' , c=1,  g=0.001, v=10):
- train = np.loadtxt('train.csv', dtype=int, delimiter=',') 
- train_y = train[:,0:1].flatten()
- train= train[:,1:]
- clf = svm.SVC(kernel=k, C=c,gamma = g)# take parameter from  command line 
- scores = CV.cross_val_score(clf, train, train_y, cv=v)
- print("CV Accuracy: %0.2f (+/- %0.2f)" % (scores.mean(), scores.std()))
+test_y = test[:,0:1].flatten().astype(int)
+test= test[:,1:] 
+
+#scale the data[0,1]. using min max scaler that preserves sparcity 
+min_max_scaler = preprocessing.MinMaxScaler()
+#fit and transform the scaler with train
+train= min_max_scaler.fit_transform(train)
+test =min_max_scaler.transform(test) 
+
+  
 
 
-def prediction(k='linear' , c=1,  g=0.001):
- test = np.loadtxt('test.csv', dtype=int, delimiter=',')
- test_y = test[:,0:1].flatten()
- test= test[:,1:]    
- clf = svm.SVC(kernel=k, C=c,gamma = g)
- predicted = clf.predict(test)
- print("Prediction accuracy: ",metrics.accuracy_score(predicted, test_y))
- print("Confusion matrix:\n%s" % metrics.confusion_matrix(predicted, test_y))
+#find the best parameters by using a grid search CV
+# all posibble parameters too long time.
+#==============================================================================
+# C_range = np.logspace(-10, 0, 5)
+# gamma_range = np.logspace(-5, 3, 8)
+# k = ['rbf','poly','linear']
+# degree = np.array([3,4])
+# 
+# param_grid = dict(kernel=k, gamma=gamma_range, C=C_range)
+# grid = GS(svm.SVC(), param_grid=param_grid,n_jobs=-1 ).fit(train, train_y)
+#==============================================================================
 
-#boillerplate syntax for taking agrs from CMD
-def main():
+# find the best parameters for Linear kernel using LinearSVC
 
- parser = argparse.ArgumentParser() 
- parser.add_argument('c', nargs='*', help="The C parameter for SVM",default=[5], type = float)
- parser.add_argument('cv', nargs='*',help="number of folds for K-fold CV", default=[5], type = int)
- parser.add_argument('k', type=str, help="the kernel 'rbf','linear','poly',...")
- parser.add_argument('g', help="gamma, The kernel coeff ",type=int)
+clf = GS(svm.LinearSVC(),dict( C=np.logspace(-10, 0, 30)),n_jobs=-1).fit(train, train_y)
+bestpar = clf.best_params_['C']
+#print cross validation details
+print("The best parameters are %s with a score of %0.2f"
+      % (clf.best_params_, clf.best_score_))
+means = clf.cv_results_['mean_test_score']
+stds = clf.cv_results_['std_test_score']
+for mean, std, params in zip(means, stds, clf.cv_results_['params']):
+   print("%0.3f (+/-%0.03f) for %r"
+              % (mean, std * 2, params))
+print("Best settng is %r" %clf.best_params_)
+
+#Now for rbf
+#==============================================================================
+# grid = GS(svm.SVC(cache_size = 600), param_grid=dict( gamma=np.logspace(-5, 0, 5),\
+#                   C=[bestpar]),n_jobs=-1 ).fit(train, train_y)
+# 
+# #takes too long time 
+# #apply PCA
+#==============================================================================
+pca = PCA(n_components=64)
+pca.fit(train)
+p_train = pca.fit_transform(train)
+
+#test random withh high gamma and low C
+grid = GS(svm.SVC(cache_size = 600), param_grid=dict( gamma=[1.0],\
+          C=[0.01,0.001,1]),n_jobs=-1 ).fit(p_train, train_y)
+
+#test with high C low gamma 
+grid = GS(svm.SVC(cache_size = 600), param_grid=dict( gamma=[0.1,0.1000001], \
+          C=[1.0]),n_jobs=-1 ).fit(p_train, train_y)
+#2oom-in on range
+grid = GS(svm.SVC(cache_size = 600), param_grid=dict( \
+          gamma=np.logspace(-2,-1,12,endpoint=True), C=[1.0]),n_jobs=-1 )\
+          .fit(p_train, train_y)
+
  
- args = parser.parse_args()
-
- for c in args.c :
-     for v in args.cv:
-         tune(args.k,c, args.g,v)# to run prediction change call to prediction
-
-if __name__ == '__main__':
-    main()
+#predict
+clf = svm.SVC(C=grid.best_params_['C'],gamma=grid.best_params_['gamma'],\
+              cache_size=600).fit(train,train)
+predicted = clf.predict(test)
+print("Prediction accuracy: %0.2f" % (metrics.accuracy_score(predicted, test_y)))
+ print("Classification report for classifier %s:\n%s\n"
+      % (clf, metrics.classification_report(test_y, predicted)))
