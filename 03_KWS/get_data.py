@@ -24,7 +24,7 @@ for filename in glob.glob('path_to-file/*.jpg'): #assuming jpg
 
 
 svgs = []
-path = "/home/tony/pictures"
+path = "path_to_svgs"
 valid_images = [".svg"]
 for f in os.listdir(path):
     ext = os.path.splitext(f)[1]
