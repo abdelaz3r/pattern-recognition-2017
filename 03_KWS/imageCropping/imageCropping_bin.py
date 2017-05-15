@@ -4,6 +4,7 @@ import re
 import numpy as np
 import sys
 import os
+from skimage import filters
 
 """
 Created on Sunday 14.05.2017
@@ -31,15 +32,17 @@ def main():
 
 # Image Binarization process
 def image_bin():
-    im = Image.open('images/%s.jpg' % sys.argv[1])
-
-    im = im.convert('L')
+    im = Image.open('images/%s.jpg' % sys.argv[1])im.convert('L')
 
     bw = np.asarray(im).copy()
+    threshold = filters.threshold_otsu(bw)
+    bw[bw < threshold] = 0
+    bw[bw >= threshold] = 255
+    
 
     # Pixel range is 0...255, 256/2 = 128
-    bw[bw < 128] = 0  # Black
-    bw[bw >= 128] = 255  # White
+    #bw[bw < 128] = 0  # Black
+    #bw[bw >= 128] = 255  # White
 
     # Now we put it back in Pillow/PIL land
     return Image.fromarray(bw)
