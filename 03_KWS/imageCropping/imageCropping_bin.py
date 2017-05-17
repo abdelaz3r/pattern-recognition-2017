@@ -16,7 +16,7 @@ def main():
     # argv[0] : Image and SVG ID to process
     print('Process started....')
 
-    os.makedirs(sys.argv[1], exist_ok=True)
+    os.makedirs("croppedImages/%s" % sys.argv[1], exist_ok=True)
 
     im = image_bin()
 
@@ -32,9 +32,12 @@ def main():
 
 # Image Binarization process
 def image_bin():
-    im = Image.open('images/%s.jpg' % sys.argv[1])im.convert('L')
+    im = Image.open('images/%s.jpg' % sys.argv[1])
+
+    im.convert('L')
 
     bw = np.asarray(im).copy()
+
     threshold = filters.threshold_otsu(bw)
     bw[bw < threshold] = 0
     bw[bw >= threshold] = 255
@@ -74,25 +77,26 @@ def shape_list_svg():
 def image_cropping(shape_list, im, im_array, attributes):
     count = 0
     for s in shape_list:
-        ImageDraw.Draw(im).polygon(s, outline=1, fill=None)
+        #ImageDraw.Draw(im).polygon(s, outline=1, fill=None)
 
+        # Create mask bin with size of the pic and black fill
         mask_im = Image.new('L', (im_array.shape[1], im_array.shape[0]), 0)
-        ImageDraw.Draw(mask_im).polygon(s, outline=1, fill=None)
-        #mask = np.array(mask_im)
-
+        # Draw the current polygon
+        ImageDraw.Draw(mask_im).polygon(s, outline=1, fill=255)
+        mask = np.array(mask_im)
         # assemble new image (uint8: 0-255)
         new_im_array = np.empty(im_array.shape, dtype='uint8')
 
         # colors
         new_im_array[:, :] = im_array[:, :]
 
-        # transparency (4th column)
-        #new_im_array[:, :] = mask * 255
+        # Between polygon and border, set color to white
+        new_im_array[mask == 0] = 255
 
-        # back to Image from numpy
         new_im = Image.fromarray(new_im_array)
         new_im = new_im.crop(mask_im.getbbox())
-        new_im.save("%s/%s.png" % (sys.argv[1], attributes[count]['id']))
+
+        new_im.save("croppedImages/%s/%s.png" % (sys.argv[1], attributes[count]['id']))
         count += 1
 
 
