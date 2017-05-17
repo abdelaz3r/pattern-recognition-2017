@@ -1,0 +1,81 @@
+
+import numpy as np
+from PIL import Image
+
+
+def getfeatures(filename):
+    img = np.asarray(Image.open(filename).resize((200, 200)))
+    counter = 0
+    black = 0.5
+    feature_matrix = np.zeros((200,7))
+    for i in range(len(img.shape[1])):
+        #Get all feature for each run 
+        
+        column = img[:,i] # single pixel column(sliding window)
+        #1upper countour ? values or index
+        uc = np.where(column > black)[0] #first instance at column 0
+        udx = uc[0]# index
+        feature_matrix[i,0] = udx
+        
+        #2 lower countour, reverse column, first black instance
+        lc = np.where(np.flipud(img[:,i] > black))[0]
+        ldx = 200 - lc[0]# index
+        feature_matrix[i,1] = ldx
+        
+       
+        #  get counts of balck and white, unique number and their counts
+        unique, counts = np.unique(column, return_counts=True)
+        bwn =dict(zip(unique, counts))
+        
+        #3get black to white ratio
+        if(bwn.get(0) or bwn.get(1)):
+            bw_ratio= bwn.get(0)/bwn.get(1)# if black and white are 0's and 1's
+        else :
+            bw_ratio = 0
+        feature_matrix[i,2] = bw_ratio 
+        
+        # 4 black to white transitions
+        for i in range(1,len(column)):
+            if column[i] != column[i-1]:
+                counter = counter + 1
+        bwt = counter
+        feature_matrix[i,3] = bwt
+        
+        #5 number of black in window
+        counter = 0
+        for i in range(0, len(column)):
+            if column[i] >= black:
+                counter = counter +1
+
+        b_ratio = counter/len(column)
+        feature_matrix[i,4] = b_ratio
+
+    # 6 Black pixels between LC and UC
+    if ldx and udx :
+        counter = 0
+        for i in range(udx,ldx ):
+            if column[i] >= black:
+                counter = counter +1
+
+        blackrange =  counter/len(range(udx,ldx))
+    else:
+        blackrange = 0
+    
+    feature_matrix[i,5] = blackrange
+
+
+    # if the not the last column
+    if i < 199:
+        column_plus = img[:,i+1]
+        uc_plus = np.where(column_plus > black)[0] #first instance at column 0
+        udx_plus = uc_plus[0]# index
+        
+        # lower countour, reverse column, first black instance
+        lc_plus = np.where(np.flipud(img[:,i+1] > black))[0]
+        ldx_plus = 200 - lc_plus[0]# index
+        
+        # 7 gradient change
+        b_grad = np.sqrt(((udx-udx_plus) /(ldx-ldx_plus))^2)
+    
+    feature_matrix[i,6] = b_grad
+
