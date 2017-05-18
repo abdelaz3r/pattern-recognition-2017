@@ -7,7 +7,8 @@ from skimage import filters
 
 
 def main():
-    with open("/task/train.txt", "r") as myfile:
+  for i in ['trains','valids']:
+    with open("/task/"+i+".txt", "r") as myfile:
         lines = myfile.readlines()
         for line in lines:
             imageid = line.replace("\n","")
@@ -23,7 +24,7 @@ def main():
             shape_list, attributes = shape_list_svg("/ground-truth/locations/"+imageid+".svg")
             print('Processing' +imageid+'...')
                 #crop images using shape and attributes
-            image_cropping(shape_list, im, im_array, attributes)
+            image_cropping(shape_list, im, im_array, attributes,i)
             print('Process Finished.')
                 
 
@@ -67,7 +68,7 @@ def shape_list_svg(svg):
 
 
 # Image croppring process based on svg paths
-def image_cropping(shape_list, im, im_array, attributes):
+def image_cropping(shape_list, im, im_array, attributes, des):
     count = 0
     for s in shape_list:
         ImageDraw.Draw(im).polygon(s, outline=1, fill=None)
@@ -89,7 +90,7 @@ def image_cropping(shape_list, im, im_array, attributes):
         new_im = Image.fromarray(new_im_array)
         new_im = new_im.crop(mask_im.getbbox())
         new_im = image_bin(new_im)
-        new_im.save("/train/%s.png" % (attributes[count]['id']))
+        new_im.save("/"+des+"/%s.png"" % (attributes[count]['id']))
         count += 1
 #read training document images 
 #images_train = {}
