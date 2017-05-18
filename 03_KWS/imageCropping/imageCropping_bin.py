@@ -2,58 +2,51 @@ from svgpathtools import svg2paths
 from PIL import Image, ImageDraw, ImageOps
 import re
 import numpy as np
-import sys
-import os
 from skimage import filters
 
-"""
-Created on Sunday 14.05.2017
 
-@author: Jerome Treboux
-"""
 
 def main():
-    # argv[0] : Image and SVG ID to process
-    print('Process started....')
+    with open("/task/train.txt", "r") as myfile:
+        lines = myfile.readlines()
+        for line in lines:
+            imageid = line.replace("\n","")
+            im=Image.open("/images/"+imageid+".jpg")
+            
+            #each image in training
+            #binarize image
+            #im = image_bin(im)	
+            # convert to numpy (for creating mask)
+            im_array = np.asarray(im)		
+		
+            #get shape and attributes of svg
+            shape_list, attributes = shape_list_svg("/ground-truth/locations/"+imageid+".svg")
+            print('Processing' +imageid+'...')
+                #crop images using shape and attributes
+            image_cropping(shape_list, im, im_array, attributes)
+            print('Process Finished.')
+                
 
-    os.makedirs("croppedImages/%s" % sys.argv[1], exist_ok=True)
 
-    im = image_bin()
-
-    # convert to numpy (for convenience)
-    im_array = np.asarray(im)
-
-    shape_list, attributes = shape_list_svg()
-
-    print('Image cropping process started...')
-    image_cropping(shape_list, im, im_array, attributes)
-    print('Process Finished.')
 
 
 # Image Binarization process
-def image_bin():
-    im = Image.open('images/%s.jpg' % sys.argv[1])
-
-    im.convert('L')
+def image_bin(im):
+    
+    im = im.convert('L')
 
     bw = np.asarray(im).copy()
-
-    threshold = filters.threshold_otsu(bw)
+    threshold = filters.threshold_isodata(bw)
     bw[bw < threshold] = 0
     bw[bw >= threshold] = 255
     
-
-    # Pixel range is 0...255, 256/2 = 128
-    #bw[bw < 128] = 0  # Black
-    #bw[bw >= 128] = 255  # White
-
     # Now we put it back in Pillow/PIL land
     return Image.fromarray(bw)
 
 
 # Create shape list based on svg paths
-def shape_list_svg():
-    paths, attributes = svg2paths('ground-truth/locations/%s.svg' % sys.argv[1])
+def shape_list_svg(svg):
+    paths, attributes = svg2paths(svg)
 
     path_list = []
 
@@ -77,9 +70,9 @@ def shape_list_svg():
 def image_cropping(shape_list, im, im_array, attributes):
     count = 0
     for s in shape_list:
-        #ImageDraw.Draw(im).polygon(s, outline=1, fill=None)
+        ImageDraw.Draw(im).polygon(s, outline=1, fill=None)
 
-        # Create mask bin with size of the pic and black fill
+         # Create mask bin with size of the pic and black fill
         mask_im = Image.new('L', (im_array.shape[1], im_array.shape[0]), 0)
         # Draw the current polygon
         ImageDraw.Draw(mask_im).polygon(s, outline=1, fill=255)
@@ -95,9 +88,11 @@ def image_cropping(shape_list, im, im_array, attributes):
 
         new_im = Image.fromarray(new_im_array)
         new_im = new_im.crop(mask_im.getbbox())
-
-        new_im.save("croppedImages/%s/%s.png" % (sys.argv[1], attributes[count]['id']))
+        new_im = image_bin(new_im)
+        new_im.save("/train/%s.png" % (attributes[count]['id']))
         count += 1
+#read training document images 
+#images_train = {}
 
 
 if __name__ == "__main__":
