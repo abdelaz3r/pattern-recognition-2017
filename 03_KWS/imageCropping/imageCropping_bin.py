@@ -90,7 +90,7 @@ def image_cropping(shape_list, im, im_array, attributes, des):
         new_im = Image.fromarray(new_im_array)
         new_im = new_im.crop(mask_im.getbbox())
         new_im = image_bin(new_im)
-        new_im.save("/"+des+"/%s.png"" % (attributes[count]['id']))
+        new_im.save("/"+des+"/%s.png" % (attributes[count]['id']))
         count += 1
 #read training document images 
 #images_train = {}
