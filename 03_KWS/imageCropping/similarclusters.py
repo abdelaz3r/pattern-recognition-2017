@@ -11,8 +11,11 @@ from cdtw import pydtw
 from getdata import getfeatures
 import os
 import numpy as np
+from sklearn import preprocessing
+from operator import itemgetter
 #Load the feature vector from file, if exist if not generate and do dtw
 def loadFeatureVector_tofile():
+    min_max_scaler = preprocessing.MinMaxScaler() 
     try:      
         with open("C:/Users/alvin/Downloads/s2017/PR 2017/ex/PatRec17_KWS_Data-master/ground-truth/transcription.txt", "r") as myfile:
             lines = myfile.readlines()
@@ -24,7 +27,7 @@ def loadFeatureVector_tofile():
                 label = id_label[1]
                 #load feature of said image and store with the label
                 feature = getfeatures("C:/Users/alvin/Downloads/s2017/PR 2017/ex/PatRec17_KWS_Data-master/train/"+im_id+".png")
-                
+                feature= min_max_scaler.fit_transform(feature)
                 #sava to file data + id
                 file = open('C:/Users/alvin/Downloads/s2017/PR 2017/ex/PatRec17_KWS_Data-master/database/' + im_id + '.pkl','wb')
                 pickle.dump((feature,im_id,label), file)
@@ -64,14 +67,14 @@ def initialize_image_clusters():
     
 # load the dtw to classify the test set
 def test_match():
-    
+    min_max_scaler = preprocessing.MinMaxScaler() 
     #should be moved to improve performance
     clusters = initialize_image_clusters()
     matches = []
     with open("/ground-truth/transcription.txt", "r") as myfile:
         lines = myfile.readlines()
         for filename in glob.glob('valid/*'):
-            print (filename)
+            
             # get data in line
             #file = open(filename, 'rb')
             # slipt into id and labels(get id of image in valid)
@@ -79,7 +82,7 @@ def test_match():
     
             # Get the ground truth
             for line in lines:
-                print(line)
+                
                 # get data in line
                 id_label = line.replace("\n", "").split()
                 # slipt into id and labels(use id to get the label)
@@ -89,7 +92,7 @@ def test_match():
             # load feature matrix of said image 
             print('test',im_id)
             feature = getfeatures("/valid/" + im_id + ".png")
-            
+            feature= min_max_scaler.fit_transform(feature)
             # start the DTW classification, put cost to cluster in a cost table
             cost_table = {}
             cost_list = []
@@ -112,7 +115,3 @@ def test_match():
             
             matches.append(min(cost_table, key = cost_table.get))
         return matches
-
-
-if __name__ == "__main__":
-    load_test()
