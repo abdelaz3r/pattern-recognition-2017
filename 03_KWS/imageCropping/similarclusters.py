@@ -73,8 +73,8 @@ def test_match():
     matches = []
     with open("/ground-truth/transcription.txt", "r") as myfile:
         lines = myfile.readlines()
-        for filename in glob.glob('valid/*'):
-            
+        for filename in glob.glob('/valid/*'):
+    
             # get data in line
             #file = open(filename, 'rb')
             # slipt into id and labels(get id of image in valid)
@@ -82,7 +82,7 @@ def test_match():
     
             # Get the ground truth
             for line in lines:
-                
+    
                 # get data in line
                 id_label = line.replace("\n", "").split()
                 # slipt into id and labels(use id to get the label)
@@ -101,17 +101,20 @@ def test_match():
                     dtw = pydtw.dtw(feature.flatten(), feature_clust.flatten(), pydtw.Settings(dist = 'euclid',
                             step='p0sym', 
                             window='palival',
-                            param=1.0, 
+                            param=0.1, 
                             norm=True, 
                             compute_path=False))
                     cost_list.append(dtw.get_dist())#cost of all features in a cluster
-                cost_table[label_clust]= np.min(cost_list)
+                m = np.min(cost_list);
+                cost_table[label_clust]= (m)#seems to work sometimes,len([num for num in cost_list if num  < m+s]) )
+            
+            print('match',min(cost_table, key = cost_table.get))
             print('top 4 ', sorted(cost_table.items(),key=itemgetter(1),reverse=False)[0:4])
             try:
                 print('true dist',cost_table[label])
             except KeyError:
                 print('non existing template for test')
-            print('match',np.min(cost_table, key = cost_table.get))
-            
+                
             matches.append(min(cost_table, key = cost_table.get))
         return matches
+   
