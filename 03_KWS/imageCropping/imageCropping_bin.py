@@ -7,12 +7,12 @@ from skimage import filters
 
 
 def main():
-  for i in ['trains','valids']:
-    with open("/task/"+i+".txt", "r") as myfile:
+  for i in ['train','valid']:
+    with open("task/"+i+".txt", "r") as myfile:
         lines = myfile.readlines()
         for line in lines:
             imageid = line.replace("\n","")
-            im=Image.open("/images/"+imageid+".jpg")
+            im=Image.open("images/"+imageid+".jpg")
             
             #each image in training
             #binarize image
@@ -21,7 +21,7 @@ def main():
             im_array = np.asarray(im)		
 		
             #get shape and attributes of svg
-            shape_list, attributes = shape_list_svg("/ground-truth/locations/"+imageid+".svg")
+            shape_list, attributes = shape_list_svg("ground-truth/locations/"+imageid+".svg")
             print('Processing' +imageid+'...')
                 #crop images using shape and attributes
             image_cropping(shape_list, im, im_array, attributes,i)
@@ -90,7 +90,22 @@ def image_cropping(shape_list, im, im_array, attributes, des):
         new_im = Image.fromarray(new_im_array)
         new_im = new_im.crop(mask_im.getbbox())
         new_im = image_bin(new_im)
-        new_im.save("/"+des+"/%s.png" % (attributes[count]['id']))
+
+        # Resize image 
+        if new_im.size[0] < 200:
+            l = 200
+        else:
+            l = new_im.size[0]
+
+        if new_im.size[1] < 200:
+            h = 200
+        else:
+            h = new_im.size[1]
+
+        background = Image.new('RGBA', (l, h), (255, 255, 255, 255))
+        background.paste(new_im)
+        background.save("/" + des + "/%s.png" % (attributes[count]['id']))
+        #new_im.save("/"+des+"/%s.png" % (attributes[count]['id']))
         count += 1
 #read training document images 
 #images_train = {}
