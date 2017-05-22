@@ -10,13 +10,8 @@
 # *********************
 # # Pattern Recognition
 # 
-# ## Important to test the algorithm you just have to put the test and train csv files in the same file, and run the code!
-# 
-# n.b.: Best results with k = 5 or 3, around 97 %
-# 
 
-# In[11]:
-
+# In[4]:
 
 import time
 from collections import Counter
@@ -27,13 +22,21 @@ from sklearn.decomposition import PCA
 from sklearn.metrics import accuracy_score
 
 
-# In[12]:
+# In[22]:
 
 # Make rows names more readable
-def new_columns_names(columns_size):
+def new_columns_names_train(columns_size):
     new_columns_array = np.array(['label'])
 
-    for i in range(1,size):
+    for i in range(1,size_train):
+        new_name = 'pixel'+ str(i)
+        new_columns_array = np.append(new_columns_array,[new_name])
+        
+    return new_columns_array
+
+def new_columns_names_test(columns_size):
+    new_columns_array = np.array(['pixel0'])
+    for i in range(1,size_test):
         new_name = 'pixel'+ str(i)
         new_columns_array = np.append(new_columns_array, [new_name])
         
@@ -41,21 +44,24 @@ def new_columns_names(columns_size):
 
 # Read csv files
 train = pd.read_csv("./train.csv")
-test = pd.read_csv("./test.csv")
+test = pd.read_csv("./mnist_test.csv")
 
 #Create the corresponding data frames
 train_df = pd.DataFrame(train)
 test_df = pd.DataFrame(test)
 
 #Size of columns array must be the same between training data and test data
-size = len(train_df.columns.values)
+size_train = len(train_df.columns.values)
+size_test = len(test_df.columns.values)
+
 
 #Compute the new data frame
-train_df.columns = new_columns_names(size)
-test_df.columns =  new_columns_names(size)
+train_df.columns = new_columns_names_train(size_train)
+test_df.columns =  new_columns_names_test(size_test)
 
 
-# In[13]:
+
+# In[24]:
 
 #KNN is non-parametric, instance-based and used in a supervised learning setting.
 #X_train reprensents features of our taining set --> pixels
@@ -68,25 +74,16 @@ X_train = train_df.filter(regex = ("pixel.*")).values
 X_test = test_df.filter(regex = ("pixel.*")).values
 
 y_train = train_df['label'].values
-y_test = test_df['label'].values
 
 #drop to increase time for testing the distances method accuracy
 #X_test = np.delete(X_test,np.s_[100::],0)
 #y_test = np.delete(y_test, np.s_[100::])
 
 #print the sahpe
-print(X_train.shape, X_test.shape, y_train.shape, y_test.shape )
+print(X_train.shape, X_test.shape, y_train.shape)
 
 
-# ##  Core of the algorithm
-# 
-# * Training block
-# * Distances definition
-# * Predict block
-# * Define the kNN
-# 
-
-# In[14]:
+# In[25]:
 
 #Training block of the kNN, nothing to do: instance based algorithm
 def train(X_train, y_train):
@@ -94,7 +91,7 @@ def train(X_train, y_train):
     return
 
 
-# In[15]:
+# In[26]:
 
 #Define two kind of distances
 def manhattan_distance(X_train, X_test):
@@ -131,7 +128,7 @@ def euclidian_distance(X_train, X_test):
 #Predict block with manhattan distance
 def predict(X_train, y_train, X_test, k):
     #create list for distances and labels
-    distances = euclidian_distance(X_train, X_test)
+    distances = manhattan_distance(X_train, X_test)
     labels = []
     #make a list of the k neighbors'targets
     for i in range(k):
@@ -142,7 +139,7 @@ def predict(X_train, y_train, X_test, k):
     return Counter(labels).most_common(1)[0][0]
 
 
-# In[16]:
+# In[27]:
 
 #KNN
 def kNN(X_train,y_train,X_test, predictions, k):
@@ -155,7 +152,7 @@ def kNN(X_train,y_train,X_test, predictions, k):
 
 # ## Time issues
 # 
-# One way to cut down the curse of dimensionality of our set is to try to decompose the data and restructure it using some technics like
+# One way to cut down the curse of dimensionality of our set is to try to decompose the data and restructure it using some technics like:
 # 
 # * KD-tree
 # * Ball tree
@@ -168,27 +165,14 @@ def kNN(X_train,y_train,X_test, predictions, k):
 # * Choose a #of components avoiding overfitting, regarding the function
 # * Compute the transform sets with the kNN algorithm increasing the speed of the algorithm
 
-# In[ ]:
+# In[28]:
 
 pca = PCA(n_components=2)
 pca.fit(X_train)
 transform = pca.transform(X_train)
 
 
-
-# In[ ]:
-
-n_components_array=([1,2,3,4,5,10,20,50,100,200,500])
-vr = np.zeros(len(n_components_array))
-i=0;
-for n_components in n_components_array:
-    pca = PCA(n_components=n_components)
-    pca.fit(X_train)
-    vr[i] = sum(pca.explained_variance_ratio_)
-    i=i+1  
-
-
-# In[ ]:
+# In[29]:
 
 pca = PCA(n_components = 50)
 pca.fit(X_train)
@@ -198,7 +182,7 @@ transform_test = pca.transform(X_test)
 
 # ## Run the algorithm with the transform train and test sets
 
-# In[ ]:
+# In[30]:
 
 #Run the algorithm
 predictions = []
@@ -212,18 +196,14 @@ print(toc-tic)
 #transform the list into an array
 predictions = np.asarray(predictions)
 
-#accuracy 
-accuracy = accuracy_score(y_test, predictions)
-print('\nThe accuracy of our classifier is %d%%' % (accuracy*100))
 
-
-# In[ ]:
+# In[31]:
 
 #Save the output file
-out_file= open("predictionsK5Euc.txt", "w")
-out_file.write("ImageID, Label \n")
+out_file= open("predictionsK5Euc.csv", "w")
+out_file.write("ImageID, Label\n")
 for i in range(len(predictions)):
-    out_file.write(str(i+1) + "," + str(int(predictions[i])) + "\n")
+    out_file.write(str(i+1) + "," + str(int(predictions[i]))+ "\n")
 out_file.close()
 
 
