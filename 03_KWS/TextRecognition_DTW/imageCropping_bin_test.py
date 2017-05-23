@@ -7,7 +7,7 @@ from skimage import filters
 
 
 def main():
-  for i in ['train','valid']:
+  for i in ['test']:
     with open("task/"+i+".txt", "r") as myfile:
         lines = myfile.readlines()
         for line in lines:
@@ -24,7 +24,7 @@ def main():
             shape_list, attributes = shape_list_svg("ground-truth/locations/"+imageid+".svg")
             print('Processing' +imageid+'...')
                 #crop images using shape and attributes
-            image_cropping(shape_list, im, im_array, attributes,i)
+            image_cropping(shape_list, im, im_array, attributes, i)
             print('Process Finished.')
                 
 
@@ -104,8 +104,8 @@ def image_cropping(shape_list, im, im_array, attributes, des):
 
         background = Image.new('RGBA', (l, h), (255, 255, 255, 255))
         background.paste(new_im, (0,0))
-        background.save("" + des + "/%s.png" % (attributes[count]['id']))
-        #new_im.save("/"+des+"/%s.png" % (attributes[count]['id']))
+        #background.save("" + des + "/%s.png" % (attributes[count]['id']))
+        new_im.save(""+des+"/%s.png" % (attributes[count]['id']))
         count += 1
 #read training document images 
 #images_train = {}

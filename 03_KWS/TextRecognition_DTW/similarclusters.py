@@ -17,7 +17,7 @@ from operator import itemgetter
 def loadFeatureVector_tofile():
     min_max_scaler = preprocessing.MinMaxScaler() 
     try:      
-        with open("C:/Users/alvin/Downloads/s2017/PR 2017/ex/PatRec17_KWS_Data-master/ground-truth/transcription.txt", "r") as myfile:
+        with open("ground-truth/transcription.txt", "r") as myfile:
             lines = myfile.readlines()
             for line in lines:
                 #get data in line 
@@ -26,10 +26,10 @@ def loadFeatureVector_tofile():
                 im_id = id_label[0]
                 label = id_label[1]
                 #load feature of said image and store with the label
-                feature = getfeatures("C:/Users/alvin/Downloads/s2017/PR 2017/ex/PatRec17_KWS_Data-master/train/"+im_id+".png")
+                feature = getfeatures("train/"+im_id+".png")
                 feature= min_max_scaler.fit_transform(feature)
                 #sava to file data + id
-                file = open('C:/Users/alvin/Downloads/s2017/PR 2017/ex/PatRec17_KWS_Data-master/database/' + im_id + '.pkl','wb')
+                file = open('database/' + im_id + '.pkl','wb')
                 pickle.dump((feature,im_id,label), file)
     except FileNotFoundError:
         print('Training images features saved to DB')
