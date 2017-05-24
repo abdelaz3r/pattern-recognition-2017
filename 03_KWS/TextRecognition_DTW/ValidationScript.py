@@ -52,19 +52,27 @@ def main():
         else:
              results_cluster[match].append((file_id,cost[1]))
     
-    file = open('/results.pkl','wb')
+    file = open('/results.txt', "w+")
     with open("/task/keywords_test.txt", "r") as myfile:
         
         lines = myfile.readlines()
-    
+        
         for line in lines:
             line = line.replace("\n","")
             keyword, imageid = line.split(",")
             print('test', keyword)
+            stng = keyword
             for i in results_cluster:
                 if i == keyword:
-                    pickle.dump(results_cluster[i], file)
-            file.close()
+                    for j in results_cluster[i]:
+                    #print(j)
+                        r_id = j[0][0].split('\\')[1]
+                        cost = j[1]
+                        
+                        stng = stng +' '+ r_id  +','+str(cost)+' '
+                        
+                    file.write(stng)
+    file.close()
 
 
 
